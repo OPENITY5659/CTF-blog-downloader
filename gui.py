@@ -10,6 +10,9 @@ from tkinter import filedialog, messagebox, ttk
 from browser_utils import detect_browser_executable, resolve_browser_executable
 from downloader import download_as_md
 from puller import concurrent_search
+from topics import filter_results, load_topics
+
+NO_TOPIC_LABEL = "不使用专题"
 
 
 class DownloaderGUI:
@@ -26,10 +29,14 @@ class DownloaderGUI:
         self.active_downloads = 0
         self.last_save_dir = ""
 
+        self.topics = load_topics()
+        self.topic_labels = {f"{t['name']}（{tid}）": tid for tid, t in self.topics.items()}
+
         self.status_var = tk.StringVar(value="就绪")
         self.summary_var = tk.StringVar(value="暂无搜索结果")
         self.selection_var = tk.StringVar(value="未选择文章")
         self.filter_var = tk.StringVar(value="全部平台")
+        self.topic_var = tk.StringVar(value=NO_TOPIC_LABEL)
 
         self.configure_styles()
         self.setup_ui()
@@ -102,13 +109,34 @@ class DownloaderGUI:
         ttk.Button(first_row, text="清空", style="Toolbar.TButton", command=self.clear_results).pack(side=tk.LEFT, padx=(8, 0))
 
         second_row = tk.Frame(toolbar_card, bg="#ffffff")
-        second_row.pack(fill=tk.X)
+        second_row.pack(fill=tk.X, pady=(0, 10))
         ttk.Label(second_row, text="浏览器路径").pack(side=tk.LEFT)
         self.browser_entry = ttk.Entry(second_row)
         self.browser_entry.insert(0, detect_browser_executable())
         self.browser_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(8, 8))
         ttk.Button(second_row, text="选择", style="Toolbar.TButton", command=self.select_browser).pack(side=tk.LEFT)
         ttk.Button(second_row, text="自动检测", style="Toolbar.TButton", command=self.autofill_browser).pack(side=tk.LEFT, padx=(8, 0))
+
+        topic_row = tk.Frame(toolbar_card, bg="#ffffff")
+        topic_row.pack(fill=tk.X)
+        ttk.Label(topic_row, text="专题预设").pack(side=tk.LEFT)
+        self.topic_combo = ttk.Combobox(
+            topic_row,
+            textvariable=self.topic_var,
+            values=[NO_TOPIC_LABEL] + list(self.topic_labels.keys()),
+            state="readonly",
+            width=34,
+        )
+        self.topic_combo.pack(side=tk.LEFT, padx=(8, 12))
+        self.topic_combo.bind("<<ComboboxSelected>>", lambda _event: self.on_topic_selected())
+        ttk.Button(topic_row, text="专题抓取", style="Primary.TButton", command=self.on_topic_search_click).pack(side=tk.LEFT)
+        tk.Label(
+            topic_row,
+            text="（专题关键词与过滤规则在 topics.json，改完重启即生效）",
+            bg="#ffffff",
+            fg="#6e6e73",
+            font=("Helvetica Neue", 11),
+        ).pack(side=tk.LEFT, padx=(10, 0))
 
         meta_row = tk.Frame(container, bg="#f5f5f7")
         meta_row.pack(fill=tk.X, pady=(0, 10))
@@ -234,6 +262,73 @@ class DownloaderGUI:
         self.browser_entry.delete(0, tk.END)
         self.browser_entry.insert(0, detected)
         self.set_status("已自动检测浏览器路径" if detected else "未检测到本机浏览器，可留空使用 Playwright Chromium")
+
+    def current_topic(self):
+        """返回当前选中的专题 dict；未选专题时返回 None。"""
+        topic_id = self.topic_labels.get(self.topic_var.get())
+        return self.topics.get(topic_id) if topic_id else None
+
+    def on_topic_selected(self):
+        topic = self.current_topic()
+        if not topic:
+            return
+        # 选中专题后把首个关键词填进输入框，方便想单独搜某一条时直接按「搜索」
+        if topic["keywords"]:
+            self.kw_entry.delete(0, tk.END)
+            self.kw_entry.insert(0, topic["keywords"][0])
+        self.set_status(f"已选择专题「{topic['name']}」：{topic.get('description', '')}")
+
+    def on_topic_search_click(self):
+        topic = self.current_topic()
+        if not topic:
+            messagebox.showinfo("提示", "请先在上方「专题预设」里选择一个专题。")
+            return
+        if self.search_in_progress:
+            messagebox.showinfo("提示", "当前正在搜索，请稍候。")
+            return
+
+        page_text = self.pg_entry.get().strip()
+        browser_path = self.browser_entry.get().strip()
+        try:
+            pages = int(page_text)
+            if pages < 1:
+                raise ValueError
+        except ValueError:
+            messagebox.showwarning("提示", "搜索页数必须是大于 0 的整数！")
+            return
+        if browser_path and not resolve_browser_executable(browser_path):
+            messagebox.showwarning("提示", "浏览器路径无效，请重新选择，或留空使用 Playwright Chromium。")
+            return
+
+        self.search_in_progress = True
+        self.clear_tree()
+        self.tree.insert("", tk.END, iid="__loading__", values=("系统", f"正在按专题「{topic['name']}」批量搜索...", "", "SEARCHING"), tags=("loading",))
+        self.summary_var.set("正在按专题搜索中...")
+        self.selection_var.set("未选择文章")
+        self.set_busy(True, f"专题「{topic['name']}」开始搜索...")
+
+        threading.Thread(target=lambda: self.perform_topic_search(topic, pages, browser_path), daemon=True).start()
+
+    def perform_topic_search(self, topic, pages, browser_path):
+        """依次检索专题的每个关键词，按主题打分过滤后合并去重。"""
+        merged = []
+        for index, keyword in enumerate(topic["keywords"], start=1):
+            self.set_status(f"[{index}/{len(topic['keywords'])}] 搜索：{keyword}")
+            try:
+                results = concurrent_search(keyword, pages, browser_path, on_status=self.set_status)
+            except Exception:
+                continue
+            merged.extend(filter_results(results, topic))
+
+        seen = set()
+        unique = []
+        for item in merged:
+            if item["url"] in seen:
+                continue
+            seen.add(item["url"])
+            unique.append(item)
+
+        self.root.after(0, lambda: self.handle_search_results(unique))
 
     def select_browser(self):
         file_path = filedialog.askopenfilename(filetypes=[("All files", "*")])

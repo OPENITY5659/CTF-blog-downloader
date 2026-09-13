@@ -64,6 +64,50 @@ playwright install chromium
 
 
 
+## 🎯 专题预设（本项目新增）
+
+做 pwn / 逆向时想一次性囤齐某个方向的资料，不必手动想关键词。仓库根目录的 `topics.json` 定义了一组**专题**：每个专题 = 一批检索关键词 + 一套标题打分规则。
+
+目前内置 4 个专题：
+
+| 专题 id | 名称 | 覆盖内容 |
+|---|---|---|
+| `pwn-patch-binary` | 二进制 patch 实战 | CTF pwn 打补丁、IDA/Ghidra patch 插件、crackme license patch |
+| `pwn-patch-1day` | 补丁对比 / 1-day 分析 | BinDiff / Diaphora / Ghidra Version Tracking |
+| `pwn-patchelf-libc` | patchelf / libc 环境修复 | patchelf 改 interpreter/rpath、glibc-all-in-one |
+| `pwn-awdp-fix` | AWD/AWDP 漏洞修复提交 | 写最小 diff 的修复并用原始 exploit 验证 |
+
+**打分规则**：搜索结果里 `patch` 这个词太泛（CSDN 会把 “git patch”、“patch-package” 全捞进来），所以按标题加权打分而不是简单包含——强相关词（二进制/逆向/IDA/pwn…）加 3 分，一般相关词（patch/补丁/爆破…）加 2 分，噪音词（git/前端/npm…）扣 4 分，总分 ≥ `min_score` 才收录。
+
+**GUI 用法**：顶部「专题预设」下拉选一个专题 → 点「专题抓取」，程序会依次搜完该专题的全部关键词，过滤去重后列出结果，再勾选导出。
+
+**新增/修改专题**：直接编辑 `topics.json`（加一个 `keywords` + `score_terms` 块即可），重启程序生效。
+
+### 无 GUI 批量抓取（cli.py）
+
+服务器或想在终端里一次性建库时用 `cli.py`：
+
+```bash
+python cli.py --list-topics                       # 看所有专题
+python cli.py --topic pwn-patch-binary --pages 2 --limit 20 --out knowledge
+python cli.py --keyword "patchelf rpath" --sites CSDN --limit 5 --out knowledge
+python cli.py --topic pwn-patch-binary --dry-run  # 只看命中列表，不下载
+```
+
+常用参数：`--sites`（平台白名单，默认 `CSDN,先知社区`）、`--delay`（每篇间隔秒数，默认 3，调大更不容易被风控）、`--retries`（单篇重试次数）、`--show-browser`（有头模式，过博客园滑块验证时用）。
+
+导出结构（可直接丢进 Obsidian 当库）：
+
+```
+knowledge/pwn-patch-binary/
+├── index.md                      # 全专题索引
+└── <文章标题>/
+    ├── <文章标题>.md
+    └── images/image_1.png ...    # 图片已本地化，断网也能看图
+```
+
+
+
 ## 📦 项目清单
 
 - `browser_utils.py`: 负责浏览器路径检测与解析。
@@ -71,7 +115,17 @@ playwright install chromium
 - `downloader.py`: 渲染、去杂及 Markdown 转换。
 - `gui.py`: 实现桌面 UI 与异步任务调度。
 - `main.py`: 项目入口。
+- `topics.json` / `topics.py`: 专题预设配置与打分过滤。
+- `cli.py`: 无 GUI 批量抓取入口。
 - `requirements.txt`: 所需下载依赖环境。
+
+
+
+## 🩹 抓取健壮性说明（本项目新增）
+
+- **风控识别与退避重试**：CSDN 会间歇性返回「请进行安全验证」拦截页。下载器会显式识别该页面，并做退避重试（默认 3 次，间隔 5s/10s/15s），实测能把成功率从 1/6 拉到 6/6。
+- **图片懒加载处理**：先滚动整页触发 `IntersectionObserver`，再回顶提取；同时补齐 `data-actualsrc / data-src / data-original / data-lazy-src / data-echo / data-url / file` 等各家懒加载属性，并清理 `srcset`（否则 html2text 会生成重复条目）。
+- **正文容器选择**：改为「按具体度取第一个达标容器」而非「取文本最长的容器」。后者会一路选到最外层 `article`，把 CSDN 的「原创/发布时间/阅读量/收录于」头部块一起导出。
 
 
 

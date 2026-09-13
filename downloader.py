@@ -24,18 +24,27 @@ def _extract_content_html(page):
             const bodyText = document.body ? document.body.innerText : '';
             const absolutizeImages = (container) => {
                 container.querySelectorAll('img').forEach((img) => {
-                    // 【优化点1】增加 data-actualsrc 识别，这通常是 CSDN 等平台的高清原图属性
-                    const candidate = img.getAttribute('data-actualsrc') 
+                    // 懒加载属性各家不一：CSDN 用 data-actualsrc，博客园/先知用 data-src/data-original，
+                    // 其余站点散见 data-lazy-src / data-echo / data-url / file。逐级回退到 src。
+                    const candidate = img.getAttribute('data-actualsrc')
+                        || img.getAttribute('data-original-src')
                         || img.getAttribute('data-src')
                         || img.getAttribute('data-original')
+                        || img.getAttribute('data-lazy-src')
+                        || img.getAttribute('data-echo')
+                        || img.getAttribute('data-url')
+                        || img.getAttribute('file')
                         || img.getAttribute('src');
                     if (candidate) {
                         try {
                             img.setAttribute('src', new URL(candidate, location.href).href);
-                            img.removeAttribute('data-src');
-                            img.removeAttribute('data-original');
-                            img.removeAttribute('data-actualsrc');
+                            ['data-actualsrc', 'data-original-src', 'data-src', 'data-original',
+                             'data-lazy-src', 'data-echo', 'data-url'].forEach((attr) => img.removeAttribute(attr));
                         } catch (e) {}
+                    }
+                    // srcset 会让 html2text 生成额外条目，统一清掉，只保留已绝对化的 src
+                    if (img.getAttribute('srcset')) {
+                        img.removeAttribute('srcset');
                     }
                 });
             };
@@ -55,25 +64,42 @@ def _extract_content_html(page):
                     '#treeSkill',
                     '#main-toc',
                     'p[name="tableOfContents"]',
+                    // CSDN 文章头尾的元信息/推荐位（选中外层容器时的兜底清理）
+                    '.article-info-box',
+                    '.article-bar-top',
+                    '.article-header-box',
+                    '.blog-tags-box',
+                    '.slide-content-box',
+                    '.toolbox-list',
+                    '.hide-preCode-box',
+                    '#blogColumnPayAdvert',
+                    '.column-group',
+                    '.blog-footer-bottom',
+                    '.up-time',
+                    '.read-count',
                 ].join(',')).forEach((element) => {
                     element.remove();
                 });
                 absolutizeImages(container);
             };
 
+            // 选择器数组已按「具体 -> 宽泛」排序，取第一个正文达标的即可。
+            // 早期版本取 innerText 最长的容器，会一路选到最外层 article，
+            // 把 CSDN 的「原创/发布时间/阅读量/收录于」头部块一起带进来。
             const pickBestContainer = (selectors) => {
-                let best = null;
-                let bestLength = 0;
+                let fallback = null;
+                let fallbackLength = 0;
                 for (const selector of selectors) {
                     const node = document.querySelector(selector);
                     if (!node) continue;
                     const textLength = (node.innerText || '').trim().length;
-                    if (textLength > bestLength) {
-                        best = node;
-                        bestLength = textLength;
+                    if (textLength >= 200) return node;
+                    if (textLength > fallbackLength) {
+                        fallback = node;
+                        fallbackLength = textLength;
                     }
                 }
-                return best;
+                return fallback;
             };
 
             const host = location.hostname;
@@ -264,17 +290,45 @@ def _download_and_replace_images(md_text, save_path, article_url):
     return md_text
 
 
-def download_as_md(url, save_path, browser_exe_path):
+def _is_verification_page(page):
+    """识别 CSDN/博客园 的风控拦截页（安全验证、滑块）。"""
     try:
-        original_dir = os.path.dirname(save_path)
-        file_full_name = os.path.basename(save_path)
-        pure_name = os.path.splitext(file_full_name)[0]
-        article_folder = os.path.join(original_dir, pure_name)
-        os.makedirs(article_folder, exist_ok=True)
-        final_save_path = os.path.join(article_folder, file_full_name)
+        title = page.title()
+    except Exception:
+        return False
+    if "安全验证" in title or "Security Verification" in title:
+        return True
+    try:
+        body = page.locator("body").inner_text(timeout=2000)
+    except Exception:
+        return False
+    return "请进行安全验证" in body or "滑动验证" in body
 
-        with sync_playwright() as p:
-            browser = _launch_browser(p, browser_exe_path, headless=True)
+
+def _scroll_for_lazy_images(page):
+    """滚到底再回顶，触发懒加载图片真正写入 src（图文并茂的关键一步）。"""
+    try:
+        page.evaluate("""
+            async () => {
+                const step = window.innerHeight;
+                const height = document.body.scrollHeight;
+                for (let y = 0; y < height; y += step) {
+                    window.scrollTo(0, y);
+                    await new Promise((r) => setTimeout(r, 200));
+                }
+                window.scrollTo(0, 0);
+            }
+        """)
+    except Exception:
+        pass
+    time.sleep(1)
+
+
+def _download_once(url, final_save_path, browser_exe_path):
+    """单次抓取尝试，返回 (ok, detail, retryable)。"""
+    with sync_playwright() as p:
+        browser = _launch_browser(p, browser_exe_path, headless=True)
+        try:
             context = browser.new_context(
                 user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
             )
@@ -283,29 +337,59 @@ def download_as_md(url, save_path, browser_exe_path):
 
             page.goto(url, wait_until="domcontentloaded", timeout=60000)
             time.sleep(2)
+
+            if _is_verification_page(page):
+                # 风控页等几秒有时会自动放行，交给上层重试
+                time.sleep(3)
+                if _is_verification_page(page):
+                    return False, "站点触发安全验证（风控），请降低频率后重试", True
+
             _expand_page_if_needed(page)
+            _scroll_for_lazy_images(page)
 
             extracted = _extract_content_html(page)
             if not extracted:
-                browser.close()
-                return False, "未能提取正文内容"
+                return False, "未能提取正文内容", True
 
             content_html = extracted.get("contentHtml", "")
             if extracted.get("paywalled"):
-                browser.close()
                 detail = extracted.get("paywallReason") or "目标文章存在付费或解锁限制"
-                return False, detail
+                return False, detail, False
+
             article_title = _extract_title(page)
             md_text = _build_markdown(article_title, url, content_html)
             if not md_text:
-                browser.close()
-                return False, "正文内容过短"
+                return False, "正文内容过短", True
+
             md_text = _download_and_replace_images(md_text, final_save_path, url)
             with open(final_save_path, "w", encoding="utf-8") as f:
                 f.write(md_text)
-
+            return True, "", False
+        finally:
             browser.close()
-            return True, ""
+
+
+def download_as_md(url, save_path, browser_exe_path, retries=3, retry_wait=5.0):
+    """下载并转为 Markdown。遇到风控/提取失败会退避重试（默认 3 次）。"""
+    try:
+        original_dir = os.path.dirname(save_path)
+        file_full_name = os.path.basename(save_path)
+        pure_name = os.path.splitext(file_full_name)[0]
+        article_folder = os.path.join(original_dir, pure_name)
+        os.makedirs(article_folder, exist_ok=True)
+        final_save_path = os.path.join(article_folder, file_full_name)
+
+        detail = ""
+        for attempt in range(1, retries + 1):
+            ok, detail, retryable = _download_once(url, final_save_path, browser_exe_path)
+            if ok:
+                return True, ""
+            if not retryable or attempt == retries:
+                break
+            wait = retry_wait * attempt
+            print(f"  第 {attempt} 次失败（{detail}），{wait:.0f}s 后重试")
+            time.sleep(wait)
+        return False, detail
     except Exception as e:
         print(f"下载出现异常: {e}")
         return False, str(e)

@@ -1,0 +1,121 @@
+{
+  "version": 2,
+  "_comment": "专题预设配置。每个专题 = 一组检索关键词 + 标题加权打分规则（分数 >= min_score 才收录）。GUI 的『专题预设』下拉与 cli.py --topic 都读这里，改完不用动代码。",
+  "_scoring": "score_terms 按权重给标题打分：强相关词（二进制/逆向/IDA/pwn…）给 3 分，一般相关词（patch/补丁/爆破…）给 2 分，误命中噪音词（git/patch-package/前端…）给负分。",
+  "topics": [
+    {
+      "id": "pwn-patch-binary",
+      "name": "二进制 patch 实战",
+      "description": "CTF pwn 题打补丁 / IDA-Ghidra patch 插件 / crackme license patch 的图文实战",
+      "keywords": [
+        "CTF pwn patch 打补丁",
+        "二进制 patch 技巧",
+        "IDA patch 插件 教程",
+        "crackme patch 爆破",
+        "Ghidra patch 二进制",
+        "AWD pwn 修复 补丁",
+        "patch 二进制 逆向 实战"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {
+          "weight": 3,
+          "terms": ["二进制", "逆向", "反汇编", "汇编", "crackme", "keypatch", "patchkit", "patchex", "ida", "ghidra", "pwn", "脱壳", "破解", "so文件", "固件", "补丁分析", "bindiff", "diaphora", "patchelf", "libc", "awdp", "awd", "寄存器", "栈溢出", "exploit"]
+        },
+        {
+          "weight": 2,
+          "terms": ["patch", "补丁", "爆破", "修复", "fix", "修改", "绕过", "调试", "hook", "注入", "对抗", "内存"]
+        },
+        {
+          "weight": -4,
+          "terms": ["git", "format-patch", "patch-package", "stash", "npm", "webpack", "yarn", "前端", "vue", "react", "spring", "代码变更", "发版", "发包", "招聘", "培训", "课程", "面经"]
+        }
+      ],
+      "exclude_any": ["招聘", "培训", "广告", "课程推荐"]
+    },
+    {
+      "id": "pwn-patch-1day",
+      "name": "补丁对比 / 1-day 分析",
+      "description": "patched vs unpatched 二进制 diff，从补丁差异反推漏洞（BinDiff/Diaphora/Ghidra Version Tracking）",
+      "keywords": [
+        "补丁对比 漏洞分析",
+        "BinDiff 教程",
+        "Diaphora 插件 使用",
+        "1day 漏洞 补丁分析",
+        "patch diffing 实战",
+        "Ghidra Version Tracking 对比"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {
+          "weight": 3,
+          "terms": ["补丁对比", "补丁分析", "bindiff", "diaphora", "patch diff", "patchdiff", "1day", "1-day", "version tracking", "漏洞", "cve", "逆向", "反汇编", "ida", "ghidra", "二进制"]
+        },
+        {
+          "weight": 2,
+          "terms": ["patch", "补丁", "diff", "对比", "复现", "分析", "修复"]
+        },
+        {
+          "weight": -4,
+          "terms": ["git", "format-patch", "patch-package", "stash", "前端", "vue", "react", "招聘", "培训", "面经", "课程"]
+        }
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-patchelf-libc",
+      "name": "patchelf / libc 环境修复",
+      "description": "pwn 题本地环境修复：patchelf 改 interpreter/rpath、glibc-all-in-one 换 libc",
+      "keywords": [
+        "patchelf 修改 interpreter",
+        "patchelf rpath libc",
+        "glibc-all-in-one 使用",
+        "pwn libc 版本 替换",
+        "pwn 本地环境 修复"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {
+          "weight": 3,
+          "terms": ["patchelf", "glibc-all-in-one", "glibc", "libc", "interpreter", "rpath", "ld.so", "pwn", "栈溢出", "调试", "gdb", "pwntools"]
+        },
+        {
+          "weight": 2,
+          "terms": ["替换", "修复", "环境", "版本", "编译", "链接", "加载"]
+        },
+        {
+          "weight": -4,
+          "terms": ["招聘", "培训", "课程", "面经", "前端"]
+        }
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-awdp-fix",
+      "name": "AWD/AWDP 漏洞修复提交",
+      "description": "比赛向：写最小 diff 的漏洞修复（不堵功能），用原始 exploit 验证 patch 生效",
+      "keywords": [
+        "AWDP fix 修复 技巧",
+        "AWD 漏洞修复 最小改动",
+        "CTF defence 修复 pwn",
+        "AWDP 比赛 打法 pwn"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {
+          "weight": 3,
+          "terms": ["awd", "awdp", "ctf", "pwn", "漏洞", "exploit", "getshell", "flag", "靶场", "比赛", "攻防"]
+        },
+        {
+          "weight": 2,
+          "terms": ["fix", "修复", "补丁", "patch", "防御", "defence", "defense", "加固", "打法", "策略"]
+        },
+        {
+          "weight": -4,
+          "terms": ["招聘", "培训", "课程", "面经", "广告"]
+        }
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    }
+  ]
+}

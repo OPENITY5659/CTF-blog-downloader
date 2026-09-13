@@ -48,6 +48,9 @@ def fetch_csdn_results(keyword, page):
             title = a.get('title', '').replace('<em>','').replace('</em>','')
             article_url = a.get('url')
             if article_url:
+                # CSDN 搜索结果链接带一长串 ops_request_misc/utm_* 追踪参数，
+                # 去掉后更短、也便于跨关键词去重（同一篇文章只留一条）。
+                article_url = article_url.split('?')[0]
                 results.append({"site": "CSDN", "title": title, "url": article_url})
     except Exception as e:
         print(f"CSDN 搜索失败(page={page}): {e}")
@@ -99,11 +102,11 @@ def _wait_for_cnblogs_results(page, on_status=None, timeout_seconds=90):
     return _cnblogs_has_results(page)
 
 
-def fetch_cnblogs_results_all(keyword, max_pages, browser_path, on_status=None):
+def fetch_cnblogs_results_all(keyword, max_pages, browser_path, on_status=None, headless=False):
     results = []
     try:
         with sync_playwright() as p:
-            browser = _launch_browser(p, browser_path, headless=False)
+            browser = _launch_browser(p, browser_path, headless=headless)
             pg = browser.new_page()
             pg.add_init_script(ANTIBOT_JS)
             
@@ -131,11 +134,11 @@ def fetch_cnblogs_results_all(keyword, max_pages, browser_path, on_status=None):
         print(f"博客园搜索失败: {e}")
     return results
 
-def fetch_xz_results_all(keyword, max_pages, browser_path):
+def fetch_xz_results_all(keyword, max_pages, browser_path, headless=False):
     results = []
     try:
         with sync_playwright() as p:
-            browser = _launch_browser(p, browser_path, headless=False)
+            browser = _launch_browser(p, browser_path, headless=headless)
             context = browser.new_context(user_agent="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
             pg = context.new_page()
             pg.add_init_script(ANTIBOT_JS)
@@ -160,14 +163,21 @@ def fetch_xz_results_all(keyword, max_pages, browser_path):
         print(f"先知社区搜索失败: {e}")
     return results
 
-def concurrent_search(keyword, max_pages, browser_path="", on_status=None):
+def concurrent_search(keyword, max_pages, browser_path="", on_status=None, sites=None, headless=False):
+    """并发搜索多个平台。
+
+    sites: 平台白名单（如 ["CSDN", "先知社区"]），None 表示全部。
+    headless: 无 GUI 场景（cli.py）传 True；博客园有滑块验证，headless 下通常会失败。
+    """
     all_results = []
 
     jobs = {
         "CSDN": lambda: fetch_csdn_results_all(keyword, max_pages),
-        "博客园": lambda: fetch_cnblogs_results_all(keyword, max_pages, browser_path, on_status=on_status),
-        "先知社区": lambda: fetch_xz_results_all(keyword, max_pages, browser_path),
+        "博客园": lambda: fetch_cnblogs_results_all(keyword, max_pages, browser_path, on_status=on_status, headless=headless),
+        "先知社区": lambda: fetch_xz_results_all(keyword, max_pages, browser_path, headless=headless),
     }
+    if sites:
+        jobs = {name: job for name, job in jobs.items() if name in sites}
 
     with ThreadPoolExecutor(max_workers=3) as executor:
         future_map = {}

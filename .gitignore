@@ -1,0 +1,12 @@
+# 运行环境
+.venv/
+__pycache__/
+*.pyc
+
+# 抓取产物（离线知识库，体积大且可重新生成，不入库）
+knowledge/
+
+# 系统/编辑器
+.DS_Store
+.idea/
+.vscode/
