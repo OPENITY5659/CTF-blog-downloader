@@ -1,7 +1,7 @@
 {
-  "version": 2,
-  "_comment": "专题预设配置。每个专题 = 一组检索关键词 + 标题加权打分规则（分数 >= min_score 才收录）。GUI 的『专题预设』下拉与 cli.py --topic 都读这里，改完不用动代码。",
-  "_scoring": "score_terms 按权重给标题打分：强相关词（二进制/逆向/IDA/pwn…）给 3 分，一般相关词（patch/补丁/爆破…）给 2 分，误命中噪音词（git/patch-package/前端…）给负分。",
+  "version": 3,
+  "_comment": "专题预设配置。每个专题 = 一组检索关键词 + 标题加权打分规则（分数 >= min_score 才收录）。GUI 的『专题预设』下拉与 cli.py --topic / --all-topics 都读这里，改完不用动代码。",
+  "_scoring": "score_terms 按权重给标题打分：强相关词（pwn/tcache/反序列化…）给 3 分，一般相关词（利用/绕过/实战…）给 2 分，误命中噪音词（招聘/培训/java堆/sql优化…）给负分。同一权重组内命中多个词可累加（上限 2 个）。",
   "topics": [
     {
       "id": "pwn-patch-binary",
@@ -13,23 +13,13 @@
         "IDA patch 插件 教程",
         "crackme patch 爆破",
         "Ghidra patch 二进制",
-        "AWD pwn 修复 补丁",
         "patch 二进制 逆向 实战"
       ],
       "min_score": 4,
       "score_terms": [
-        {
-          "weight": 3,
-          "terms": ["二进制", "逆向", "反汇编", "汇编", "crackme", "keypatch", "patchkit", "patchex", "ida", "ghidra", "pwn", "脱壳", "破解", "so文件", "固件", "补丁分析", "bindiff", "diaphora", "patchelf", "libc", "awdp", "awd", "寄存器", "栈溢出", "exploit"]
-        },
-        {
-          "weight": 2,
-          "terms": ["patch", "补丁", "爆破", "修复", "fix", "修改", "绕过", "调试", "hook", "注入", "对抗", "内存"]
-        },
-        {
-          "weight": -4,
-          "terms": ["git", "format-patch", "patch-package", "stash", "npm", "webpack", "yarn", "前端", "vue", "react", "spring", "代码变更", "发版", "发包", "招聘", "培训", "课程", "面经"]
-        }
+        {"weight": 3, "terms": ["二进制", "逆向", "反汇编", "汇编", "crackme", "keypatch", "patchkit", "patchex", "ida", "ghidra", "pwn", "脱壳", "破解", "so文件", "固件", "补丁分析", "bindiff", "diaphora", "patchelf", "libc", "awdp", "awd", "寄存器", "栈溢出", "exploit"]},
+        {"weight": 2, "terms": ["patch", "补丁", "爆破", "修复", "fix", "修改", "绕过", "调试", "hook", "注入", "对抗", "内存"]},
+        {"weight": -4, "terms": ["git", "format-patch", "patch-package", "stash", "npm", "webpack", "yarn", "前端", "vue", "react", "spring", "代码变更", "发版", "发包", "招聘", "培训", "课程", "面经"]}
       ],
       "exclude_any": ["招聘", "培训", "广告", "课程推荐"]
     },
@@ -47,18 +37,9 @@
       ],
       "min_score": 5,
       "score_terms": [
-        {
-          "weight": 3,
-          "terms": ["补丁对比", "补丁分析", "bindiff", "diaphora", "patch diff", "patchdiff", "1day", "1-day", "version tracking", "漏洞", "cve", "逆向", "反汇编", "ida", "ghidra", "二进制"]
-        },
-        {
-          "weight": 2,
-          "terms": ["patch", "补丁", "diff", "对比", "复现", "分析", "修复"]
-        },
-        {
-          "weight": -4,
-          "terms": ["git", "format-patch", "patch-package", "stash", "前端", "vue", "react", "招聘", "培训", "面经", "课程"]
-        }
+        {"weight": 3, "terms": ["补丁对比", "补丁分析", "bindiff", "diaphora", "patch diff", "patchdiff", "1day", "1-day", "version tracking", "漏洞", "cve", "逆向", "反汇编", "ida", "ghidra", "二进制"]},
+        {"weight": 2, "terms": ["patch", "补丁", "diff", "对比", "复现", "分析", "修复"]},
+        {"weight": -4, "terms": ["git", "format-patch", "patch-package", "stash", "前端", "vue", "react", "招聘", "培训", "面经", "课程"]}
       ],
       "exclude_any": ["招聘", "培训", "课程推荐"]
     },
@@ -75,45 +56,363 @@
       ],
       "min_score": 4,
       "score_terms": [
-        {
-          "weight": 3,
-          "terms": ["patchelf", "glibc-all-in-one", "glibc", "libc", "interpreter", "rpath", "ld.so", "pwn", "栈溢出", "调试", "gdb", "pwntools"]
-        },
-        {
-          "weight": 2,
-          "terms": ["替换", "修复", "环境", "版本", "编译", "链接", "加载"]
-        },
-        {
-          "weight": -4,
-          "terms": ["招聘", "培训", "课程", "面经", "前端"]
-        }
+        {"weight": 3, "terms": ["patchelf", "glibc-all-in-one", "glibc", "libc", "interpreter", "rpath", "ld.so", "pwn", "栈溢出", "调试", "gdb", "pwntools"]},
+        {"weight": 2, "terms": ["替换", "修复", "环境", "版本", "编译", "链接", "加载"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "前端"]}
       ],
       "exclude_any": ["招聘", "培训", "课程推荐"]
     },
     {
-      "id": "pwn-awdp-fix",
-      "name": "AWD/AWDP 漏洞修复提交",
-      "description": "比赛向：写最小 diff 的漏洞修复（不堵功能），用原始 exploit 验证 patch 生效",
+      "id": "pwn-heap-exploit",
+      "name": "PWN 堆利用",
+      "description": "tcache / fastbin / unsorted bin / UAF / house of 系列，堆风水与 unsafe unlink",
       "keywords": [
-        "AWDP fix 修复 技巧",
-        "AWD 漏洞修复 最小改动",
-        "CTF defence 修复 pwn",
-        "AWDP 比赛 打法 pwn"
+        "pwn 堆利用 tcache",
+        "UAF 漏洞利用 实战",
+        "fastbin attack 实战",
+        "unsorted bin 泄漏 libc",
+        "堆溢出 利用 教程",
+        "house of 系列 利用"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["tcache", "uaf", "use after free", "fastbin", "unsorted bin", "smallbin", "largebin", "chunk", "heap", "house of", "堆溢出", "堆风水", "unlink", "double free", "pwn", "malloc", "free_hook", "exit_hook"]},
+        {"weight": 2, "terms": ["堆", "利用", "泄露", "泄漏", "劫持", "实战", "构造", "绕过"]},
+        {"weight": -4, "terms": ["java堆", "jvm", "gc 回收", "堆内存", "性能优化", "内存泄漏 排查", "招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-stack-rop",
+      "name": "PWN 栈溢出 / ROP",
+      "description": "栈溢出、ret2libc / ret2csu / ret2syscall、栈迁移、canary 与 PIE 绕过",
+      "keywords": [
+        "栈溢出 ROP 利用",
+        "ret2libc 实战",
+        "ret2csu gadget 构造",
+        "栈迁移 利用",
+        "canary 绕过 技巧",
+        "pwntools rop 教程"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["rop", "ret2", "栈溢出", "栈迁移", "canary", "gadget", "shellcode", "pwntools", "pwn", "libc", "返回地址", "溢出", "nx", "aslr", "pie", "栈劫持", "stack pivot"]},
+        {"weight": 2, "terms": ["利用", "绕过", "实战", "调试", "构造", "覆盖", "泄露"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "栈 数据结构", "数据结构 栈"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-format-string",
+      "name": "PWN 格式化字符串",
+      "description": "printf 格式化字符串漏洞：任意地址读、任意地址写、%n 系列利用",
+      "keywords": [
+        "格式化字符串 漏洞利用",
+        "printf 任意地址写",
+        "格式化字符串 泄漏 地址",
+        "fmtstr 利用 技巧"
       ],
       "min_score": 4,
       "score_terms": [
-        {
-          "weight": 3,
-          "terms": ["awd", "awdp", "ctf", "pwn", "漏洞", "exploit", "getshell", "flag", "靶场", "比赛", "攻防"]
-        },
-        {
-          "weight": 2,
-          "terms": ["fix", "修复", "补丁", "patch", "防御", "defence", "defense", "加固", "打法", "策略"]
-        },
-        {
-          "weight": -4,
-          "terms": ["招聘", "培训", "课程", "面经", "广告"]
-        }
+        {"weight": 3, "terms": ["格式化字符串", "format string", "fmtstr", "printf", "%p", "%n", "%s", "任意写", "任意地址写", "pwn"]},
+        {"weight": 2, "terms": ["利用", "泄露", "泄漏", "实战", "绕过", "覆盖", "构造"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "printf 格式化 输出", "java 格式化"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-kernel",
+      "name": "PWN 内核提权",
+      "description": "kernel pwn：QEMU 起环境、内核 UAF、cred 提权、modprobe_path、内核 ROP",
+      "keywords": [
+        "内核 pwn 提权",
+        "kernel pwn 入门 环境",
+        "qemu 内核调试 pwn",
+        "内核 UAF 利用",
+        "kernel rop 提权"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["内核", "kernel", "qemu", "提权", "内核模块", "cred", "modprobe", "pwn", "ko 文件", "驱动漏洞", "rop", "privesc"]},
+        {"weight": 2, "terms": ["利用", "调试", "入门", "实战", "漏洞", "绕过", "环境"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "内核 编译", "驱动开发 教程", "linux 内核 源码分析"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-sandbox-orw",
+      "name": "PWN 沙箱绕过 / ORW",
+      "description": "seccomp 沙箱绕过、ORW shellcode 构造、syscall 受限下的 getshell",
+      "keywords": [
+        "seccomp 沙箱绕过",
+        "orw shellcode 构造",
+        "沙箱逃逸 pwn",
+        "openat read write shellcode"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["seccomp", "沙箱", "orw", "shellcode", "openat", "syscall", "pwn", "逃逸", "sandbox"]},
+        {"weight": 2, "terms": ["绕过", "利用", "构造", "实战", "限制", "过滤"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "沙箱 环境 隔离 运维"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "pwn-tools",
+      "name": "PWN 工具链 / 调试",
+      "description": "pwntools / pwndbg / GEF / one_gadget / LibcSearcher 等 pwn 常用工具与调试技巧",
+      "keywords": [
+        "pwntools 使用教程",
+        "pwndbg 配置 使用",
+        "one_gadget 使用 技巧",
+        "LibcSearcher 使用",
+        "pwn 调试 技巧"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["pwntools", "pwndbg", "peda", "gef", "one_gadget", "libcsearcher", "gdb", "pwn", "调试", "exp 脚本"]},
+        {"weight": 2, "terms": ["使用", "配置", "教程", "技巧", "脚本", "入门", "实战"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-sqli",
+      "name": "WEB SQL 注入",
+      "description": "联合/报错/盲注/堆叠/二次注入、宽字节与 WAF 绕过、sqlmap 进阶",
+      "keywords": [
+        "SQL注入 实战 绕过",
+        "sqlmap 使用技巧",
+        "盲注 时间盲注 利用",
+        "堆叠注入 二次注入",
+        "宽字节注入 绕过"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["sql注入", "sqli", "sqlmap", "盲注", "注入", "union", "information_schema", "堆叠注入", "二次注入", "宽字节", "报错注入", "布尔盲注"]},
+        {"weight": 2, "terms": ["绕过", "实战", "利用", "过滤", "waf", "payload", "注入点"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "sql 优化", "索引 优化", "数据库 性能", "mybatis 教程"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-xss",
+      "name": "WEB XSS / CSRF",
+      "description": "反射/存储/DOM XSS、WAF 绕过、XSS 打点与 CSRF 利用",
+      "keywords": [
+        "XSS 漏洞利用 实战",
+        "XSS 绕过 WAF",
+        "DOM XSS 利用",
+        "存储型XSS 利用",
+        "XSS 打点 技巧"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["xss", "跨站脚本", "dom xss", "存储型", "反射型", "csrf", "beef", "打点", "xs-leak"]},
+        {"weight": 2, "terms": ["绕过", "利用", "过滤", "payload", "实战", "waf", "编码"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "前端 框架 教程"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-ssti",
+      "name": "WEB SSTI 模板注入",
+      "description": "Jinja2 / Twig / Freemarker / Velocity 模板注入到 RCE",
+      "keywords": [
+        "SSTI 模板注入 利用",
+        "flask jinja2 ssti",
+        "twig 模板注入",
+        "freemarker 模板注入 利用"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["ssti", "模板注入", "jinja2", "jinja", "twig", "freemarker", "velocity", "模板引擎", "flask"]},
+        {"weight": 2, "terms": ["利用", "绕过", "注入", "rce", "实战", "过滤"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "模板 渲染 性能"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-ssrf",
+      "name": "WEB SSRF",
+      "description": "SSRF 打内网、gopher/dict/file 协议、DNS rebinding 与黑名单绕过",
+      "keywords": [
+        "SSRF 漏洞利用 实战",
+        "SSRF 绕过 127.0.0.1",
+        "gopher 协议 ssrf 打内网",
+        "dict file 协议 利用"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["ssrf", "gopher", "dict://", "file://", "内网探测", "服务端请求伪造", "打内网", "redis 未授权"]},
+        {"weight": 2, "terms": ["绕过", "利用", "协议", "实战", "过滤", "黑名单"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-upload-rce",
+      "name": "WEB 文件上传 / RCE",
+      "description": "上传绕过 (.user.ini/htaccess/解析漏洞)、命令执行绕过、webshell 管理",
+      "keywords": [
+        "文件上传 绕过 getshell",
+        "文件上传 解析漏洞",
+        "命令执行 绕过 技巧",
+        "RCE 利用 实战",
+        "user.ini 上传 利用"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["文件上传", "upload", "getshell", "命令执行", "rce", "webshell", "蚁剑", "冰蝎", "哥斯拉", "user.ini", "htaccess", "解析漏洞"]},
+        {"weight": 2, "terms": ["绕过", "利用", "实战", "过滤", "waf", "上传点", "马"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "上传 组件 教程", "oss 上传"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-deserialization",
+      "name": "WEB 反序列化",
+      "description": "PHP unserialize / phar、原生类利用、Java 反序列化与 fastjson/jackson",
+      "keywords": [
+        "PHP 反序列化 利用",
+        "java 反序列化 漏洞 利用",
+        "unserialize 漏洞利用",
+        "phar 反序列化 利用",
+        "fastjson 漏洞利用"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["反序列化", "unserialize", "serialize", "fastjson", "jackson", "原生类", "pop链", "phar", "commons-collections", "shiro", "ysoserial"]},
+        {"weight": 2, "terms": ["利用", "漏洞", "绕过", "链", "实战", "构造"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "序列化 性能", "protobuf 教程"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-php-tricks",
+      "name": "WEB PHP 特性绕过",
+      "description": "弱类型、伪协议、变量覆盖、disable_functions 绕过等 PHP 特性考点",
+      "keywords": [
+        "PHP 特性 绕过 技巧",
+        "PHP 弱类型 绕过",
+        "PHP 伪协议 利用",
+        "disable_functions 绕过",
+        "PHP 变量覆盖 利用"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["php", "弱类型", "伪协议", "disable_functions", "变量覆盖", "php://", "ctf", "绕过", "原生类"]},
+        {"weight": 2, "terms": ["特性", "利用", "过滤", "实战", "技巧", "相等", "松散比较"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "laravel 开发", "thinkphp 开发", "框架 教程"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "web-lfi-traversal",
+      "name": "WEB 文件包含 / 目录穿越",
+      "description": "LFI、任意文件读取、目录穿越绕过、日志与 session 包含 getshell",
+      "keywords": [
+        "文件包含 漏洞利用",
+        "任意文件读取 利用",
+        "目录穿越 绕过 技巧",
+        "LFI 日志包含 getshell"
+      ],
+      "min_score": 4,
+      "score_terms": [
+        {"weight": 3, "terms": ["文件包含", "lfi", "目录穿越", "任意文件读取", "path traversal", "伪协议", "日志包含", "session 包含", "php://filter"]},
+        {"weight": 2, "terms": ["利用", "绕过", "实战", "getshell", "读取", "过滤"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "awdp-pwn-attack",
+      "name": "AWDP 进攻 · PWN",
+      "description": "AWD/AWDP 里 pwn 方向的进攻：漏洞定位、批量打、exp 自动化",
+      "keywords": [
+        "AWD pwn 攻击 思路",
+        "AWD 批量打 脚本 pwn",
+        "AWDP 进攻 pwn 技巧",
+        "AWD pwn exp 自动化"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["awd", "awdp", "pwn", "攻击", "进攻", "getshell", "flag", "批量", "exp", "漏洞利用", "自动化"]},
+        {"weight": 2, "terms": ["实战", "思路", "脚本", "技巧", "比赛", "策略", "打点"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "awdp-pwn-fix",
+      "name": "AWDP 修包 · PWN",
+      "description": "pwn 方向的修复提交：最小 diff 堵洞不堵功能，用原始 exp 验证 patch 生效",
+      "keywords": [
+        "AWD pwn 修复 补丁",
+        "AWDP 修复 思路 pwn",
+        "pwn 漏洞修复 最小改动",
+        "AWD 防御 修复 技巧 pwn"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["awd", "awdp", "pwn", "修复", "补丁", "fix", "防御", "加固", "漏洞", "修包"]},
+        {"weight": 2, "terms": ["实战", "思路", "技巧", "比赛", "最小", "改动", "绕过", "策略"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "awdp-web-attack",
+      "name": "AWDP 进攻 · WEB",
+      "description": "web 方向的进攻：批量 getshell、不死马与权限维持、流量打 flag",
+      "keywords": [
+        "AWD web 攻击 思路",
+        "AWD web 批量 getshell",
+        "AWDP 进攻 web 技巧",
+        "AWD 不死马 权限维持"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["awd", "awdp", "web", "攻击", "getshell", "不死马", "权限维持", "flag", "木马", "批量", "后门"]},
+        {"weight": 2, "terms": ["实战", "思路", "脚本", "技巧", "比赛", "策略", "打点"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "awdp-web-fix",
+      "name": "AWDP 修包 · WEB",
+      "description": "web 方向的修复提交：改最小 diff 堵漏洞、补 WAF 规则、防二次打点",
+      "keywords": [
+        "AWD web 修复 补丁",
+        "AWDP web 修包 思路",
+        "web 漏洞修复 最小改动",
+        "AWD 防御 WAF 规则"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["awd", "awdp", "web", "修复", "补丁", "fix", "修包", "waf", "防御", "加固", "过滤"]},
+        {"weight": 2, "terms": ["实战", "思路", "技巧", "比赛", "最小", "改动", "规则", "绕过", "策略"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经"]}
+      ],
+      "exclude_any": ["招聘", "培训", "课程推荐"]
+    },
+    {
+      "id": "awd-common",
+      "name": "AWD/AWDP 通用打法",
+      "description": "赛前准备、流量分析、木马查杀、应急排查、权限维持与得分策略",
+      "keywords": [
+        "AWD 比赛 入门 攻略",
+        "AWD 流量分析 查杀 木马",
+        "AWD 权限维持 技巧",
+        "AWDP 比赛 策略 得分",
+        "AWD 应急响应 排查"
+      ],
+      "min_score": 5,
+      "score_terms": [
+        {"weight": 3, "terms": ["awd", "awdp", "攻防", "流量分析", "查杀", "权限维持", "应急", "得分", "flag", "比赛", "靶场"]},
+        {"weight": 2, "terms": ["入门", "攻略", "策略", "技巧", "实战", "思路", "排查", "防守"]},
+        {"weight": -4, "terms": ["招聘", "培训", "课程", "面经", "广告"]}
       ],
       "exclude_any": ["招聘", "培训", "课程推荐"]
     }

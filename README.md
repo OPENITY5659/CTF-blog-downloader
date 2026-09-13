@@ -66,18 +66,53 @@ playwright install chromium
 
 ## 🎯 专题预设（本项目新增）
 
-做 pwn / 逆向时想一次性囤齐某个方向的资料，不必手动想关键词。仓库根目录的 `topics.json` 定义了一组**专题**：每个专题 = 一批检索关键词 + 一套标题打分规则。
+做 pwn / 逆向 / web 时想一次性囤齐某个方向的资料，不必手动想关键词。仓库根目录的 `topics.json` 定义了一组**专题**：每个专题 = 一批检索关键词 + 一套标题打分规则。
 
-目前内置 4 个专题：
+内置 **22 个专题**，覆盖 pwn、web 两条线的解题与 AWDP 攻防两侧：
 
-| 专题 id | 名称 | 覆盖内容 |
-|---|---|---|
-| `pwn-patch-binary` | 二进制 patch 实战 | CTF pwn 打补丁、IDA/Ghidra patch 插件、crackme license patch |
-| `pwn-patch-1day` | 补丁对比 / 1-day 分析 | BinDiff / Diaphora / Ghidra Version Tracking |
-| `pwn-patchelf-libc` | patchelf / libc 环境修复 | patchelf 改 interpreter/rpath、glibc-all-in-one |
-| `pwn-awdp-fix` | AWD/AWDP 漏洞修复提交 | 写最小 diff 的修复并用原始 exploit 验证 |
+**PWN 解题**
 
-**打分规则**：搜索结果里 `patch` 这个词太泛（CSDN 会把 “git patch”、“patch-package” 全捞进来），所以按标题加权打分而不是简单包含——强相关词（二进制/逆向/IDA/pwn…）加 3 分，一般相关词（patch/补丁/爆破…）加 2 分，噪音词（git/前端/npm…）扣 4 分，总分 ≥ `min_score` 才收录。
+| 专题 id | 名称 |
+|---|---|
+| `pwn-heap-exploit` | 堆利用（tcache / fastbin / unsorted bin / UAF / house of） |
+| `pwn-stack-rop` | 栈溢出 / ROP（ret2libc、ret2csu、栈迁移、canary 绕过） |
+| `pwn-format-string` | 格式化字符串（任意读 / 任意写） |
+| `pwn-kernel` | 内核提权（QEMU 环境、内核 UAF、modprobe_path） |
+| `pwn-sandbox-orw` | 沙箱绕过 / ORW shellcode |
+| `pwn-tools` | 工具链与调试（pwntools / pwndbg / GEF / one_gadget） |
+
+**PWN 修复与补丁**
+
+| 专题 id | 名称 |
+|---|---|
+| `pwn-patch-binary` | 二进制 patch 实战（IDA/Ghidra 打补丁、crackme） |
+| `pwn-patch-1day` | 补丁对比 / 1-day 分析（BinDiff、Diaphora） |
+| `pwn-patchelf-libc` | patchelf / libc 环境修复 |
+
+**WEB 解题**
+
+| 专题 id | 名称 |
+|---|---|
+| `web-sqli` | SQL 注入（盲注、堆叠、二次注入、宽字节、WAF 绕过） |
+| `web-xss` | XSS / CSRF（反射/存储/DOM、打点） |
+| `web-ssti` | SSTI 模板注入（Jinja2 / Twig / Freemarker） |
+| `web-ssrf` | SSRF（gopher/dict、打内网） |
+| `web-upload-rce` | 文件上传 / RCE（.user.ini、解析漏洞、命令执行绕过） |
+| `web-deserialization` | 反序列化（PHP unserialize / phar、Java、fastjson） |
+| `web-php-tricks` | PHP 特性绕过（弱类型、伪协议、disable_functions） |
+| `web-lfi-traversal` | 文件包含 / 目录穿越（LFI、日志包含） |
+
+**AWDP 攻防（进攻 + 修包）**
+
+| 专题 id | 名称 |
+|---|---|
+| `awdp-pwn-attack` | 进攻 · PWN（漏洞定位、批量打、exp 自动化） |
+| `awdp-pwn-fix` | 修包 · PWN（最小 diff 堵洞，原始 exp 验证） |
+| `awdp-web-attack` | 进攻 · WEB（批量 getshell、不死马、权限维持） |
+| `awdp-web-fix` | 修包 · WEB（改最小 diff、补 WAF 规则） |
+| `awd-common` | 通用打法（流量分析、查杀、应急排查、得分策略） |
+
+**打分规则**：搜索结果里 `patch`、`注入` 这类词太泛（CSDN 会把 “git patch”、“MySQL 索引优化” 全捞进来），所以按标题加权打分而不是简单包含——强相关词（pwn/tcache/反序列化…）加 3 分，一般相关词（利用/绕过/实战…）加 2 分，噪音词（git/前端/java堆/sql优化…）扣 4 分，总分 ≥ `min_score` 才收录。
 
 **GUI 用法**：顶部「专题预设」下拉选一个专题 → 点「专题抓取」，程序会依次搜完该专题的全部关键词，过滤去重后列出结果，再勾选导出。
 
@@ -88,10 +123,12 @@ playwright install chromium
 服务器或想在终端里一次性建库时用 `cli.py`：
 
 ```bash
-python cli.py --list-topics                       # 看所有专题
-python cli.py --topic pwn-patch-binary --pages 2 --limit 20 --out knowledge
+python cli.py --list-topics                        # 看所有专题
+python cli.py --topic pwn-heap-exploit --pages 2 --limit 10 --out knowledge
+python cli.py --topic web-sqli,web-ssti --limit 8  # 逗号分隔，串行跑多个专题
+python cli.py --topic all --pages 2 --limit 6      # 全量跑 22 个专题（同 --all-topics）
 python cli.py --keyword "patchelf rpath" --sites CSDN --limit 5 --out knowledge
-python cli.py --topic pwn-patch-binary --dry-run  # 只看命中列表，不下载
+python cli.py --topic pwn-heap-exploit --dry-run    # 只看命中列表，不下载
 ```
 
 常用参数：`--sites`（平台白名单，默认 `CSDN,先知社区`）、`--delay`（每篇间隔秒数，默认 3，调大更不容易被风控）、`--retries`（单篇重试次数）、`--show-browser`（有头模式，过博客园滑块验证时用）。
